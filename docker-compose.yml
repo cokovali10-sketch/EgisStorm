@@ -1,0 +1,9 @@
+services:
+  app:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - HIBP_API_KEY=${HIBP_API_KEY:-}
+      - APP_PASSWORD=${APP_PASSWORD:-}
+    restart: unless-stopped

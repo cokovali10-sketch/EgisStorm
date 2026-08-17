@@ -1,18 +1,28 @@
 import base64
 import io
+import json
 import os
 
 import pyotp
 import qrcode
 import requests
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, Response, jsonify, render_template, request
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
+from db import get_history, init_db, log_history
 from tools import cert as cert_tool
 from tools import crypt_tool, crypto_tools, jwt_tool, network, portcheck, webcheck
 
 app = Flask(__name__)
+app.config["RATELIMIT_STORAGE_URI"] = "memory://"
+
+limiter = Limiter(get_remote_address, app=app, default_limits=["120 per hour"])
 
 HIBP_API_KEY = os.environ.get("HIBP_API_KEY", "")
+APP_PASSWORD = os.environ.get("APP_PASSWORD", "")
+
+init_db()
 HIBP_BASE = "https://haveibeenpwned.com/api/v3"
 PWNED_PASSWORDS_URL = "https://api.pwnedpasswords.com/range/"
 USER_AGENT = "EgisStorm-Portfolio"
@@ -129,12 +139,44 @@ def phone_info(number):
     }
 
 
+@app.before_request
+def auth_guard():
+    if not APP_PASSWORD:
+        return
+    if request.path.startswith("/static/"):
+        return
+    auth = request.authorization
+    if auth and auth.username == "admin" and auth.password == APP_PASSWORD:
+        return
+    return Response(
+        "Unauthorized",
+        401,
+        {"WWW-Authenticate": 'Basic realm="EgisStorm"'},
+    )
+
+
+@app.after_request
+def log_api_calls(response):
+    if request.path.startswith("/api/") and request.method == "POST":
+        data = request.get_json(silent=True) or {}
+        sanitized = {}
+        for k, v in data.items():
+            if k in ("password", "passphrase", "token"):
+                sanitized[k] = "***"
+            else:
+                sanitized[k] = (v[:60] + "…") if isinstance(v, str) and len(v) > 60 else v
+        summary = response.status_code
+        log_history(request.path.split("/")[-1], json.dumps(sanitized, ensure_ascii=False)[:200], summary)
+    return response
+
+
 @app.get("/")
 def index():
     return render_template("index.html")
 
 
 @app.post("/api/email")
+@limiter.limit("20 per minute")
 def api_email():
     data = request.get_json(silent=True) or {}
     email = (data.get("email") or "").strip().lower()
@@ -146,6 +188,7 @@ def api_email():
 
 
 @app.post("/api/password")
+@limiter.limit("30 per minute")
 def api_password():
     data = request.get_json(silent=True) or {}
     password = data.get("password") or ""
@@ -220,6 +263,7 @@ def api_wireguard():
 
 
 @app.post("/api/dns")
+@limiter.limit("30 per minute")
 def api_dns():
     data = request.get_json(silent=True) or {}
     host = (data.get("host") or "").strip()
@@ -229,6 +273,7 @@ def api_dns():
 
 
 @app.post("/api/whois")
+@limiter.limit("30 per minute")
 def api_whois():
     data = request.get_json(silent=True) or {}
     target = (data.get("domain") or "").strip()
@@ -238,6 +283,7 @@ def api_whois():
 
 
 @app.post("/api/ip")
+@limiter.limit("30 per minute")
 def api_ip():
     data = request.get_json(silent=True) or {}
     ip = (data.get("ip") or "").strip()
@@ -247,6 +293,7 @@ def api_ip():
 
 
 @app.post("/api/cert")
+@limiter.limit("30 per minute")
 def api_cert():
     data = request.get_json(silent=True) or {}
     host = (data.get("host") or "").strip()
@@ -256,6 +303,7 @@ def api_cert():
 
 
 @app.post("/api/headers")
+@limiter.limit("30 per minute")
 def api_headers():
     data = request.get_json(silent=True) or {}
     url = (data.get("url") or "").strip()
@@ -308,6 +356,7 @@ def api_urlcheck():
 
 
 @app.post("/api/ipwhois")
+@limiter.limit("30 per minute")
 def api_ipwhois():
     data = request.get_json(silent=True) or {}
     ip = (data.get("ip") or "").strip()
@@ -326,6 +375,7 @@ def api_subnet():
 
 
 @app.post("/api/expand")
+@limiter.limit("30 per minute")
 def api_expand():
     data = request.get_json(silent=True) or {}
     url = (data.get("url") or "").strip()
@@ -335,6 +385,7 @@ def api_expand():
 
 
 @app.post("/api/mxcheck")
+@limiter.limit("30 per minute")
 def api_mxcheck():
     data = request.get_json(silent=True) or {}
     email = (data.get("email") or "").strip()
@@ -344,6 +395,7 @@ def api_mxcheck():
 
 
 @app.post("/api/cve")
+@limiter.limit("30 per minute")
 def api_cve():
     data = request.get_json(silent=True) or {}
     query = (data.get("query") or "").strip()
@@ -353,6 +405,7 @@ def api_cve():
 
 
 @app.post("/api/portcheck")
+@limiter.limit("30 per minute")
 def api_portcheck():
     data = request.get_json(silent=True) or {}
     host = (data.get("host") or "").strip()
@@ -367,6 +420,7 @@ def api_portcheck():
 
 
 @app.post("/api/robots")
+@limiter.limit("30 per minute")
 def api_robots():
     data = request.get_json(silent=True) or {}
     url = (data.get("url") or "").strip()
@@ -401,6 +455,11 @@ def api_myip():
         return jsonify({"ip": ip, "note": "Внешняя геолокация недоступна, но ваш адрес: " + ip})
     info["note"] = "Ваш внешний адрес"
     return jsonify(info)
+
+
+@app.get("/api/history")
+def api_history():
+    return jsonify({"items": get_history(50)})
 
 
 if __name__ == "__main__":

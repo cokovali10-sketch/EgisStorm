@@ -38,12 +38,19 @@
 - **2FA / TOTP** — генерация секрета и QR, автообновляемый код в браузере
 - **WireGuard VPN** — генерация клиентского конфига и Curve25519 ключей
 
-Интерактив: SVG-графики без внешних зависимостей, история проверок, экспорт результатов в JSON,
-тост-уведомления.
+Интерактив: SVG-графики без внешних зависимостей, история проверок (localStorage + серверная SQLite),
+экспорт результатов в JSON, тост-уведомления.
+
+Дополнительно:
+- **Rate limiting** — защита API (flask-limiter, 120 запросов/час, строже на внешних инструментах)
+- **Серверная история** — SQLite (пароли и ключи в логах маскируются)
+- **Опциональная авторизация** — Basic Auth через переменную `APP_PASSWORD`
+- **Docker** — готовые Dockerfile и docker-compose
+- **CI** — GitHub Actions: линт + pytest
 
 ## Технологии
 
-- **Backend:** Python 3.12, Flask
+- **Backend:** Python 3.12, Flask, flask-limiter, SQLite
 - **Frontend:** HTML / CSS / JS (vanilla, без фреймворков)
 - **Библиотеки:** requests, dnspython, phonenumbers, pyotp, qrcode, cryptography, PyNaCl
 
@@ -56,6 +63,19 @@ pip install -r requirements.txt
 python run.py                   # http://127.0.0.1:5000
 ```
 
+### Docker
+
+```bash
+docker compose up --build
+```
+
+### Переменные окружения
+
+| Переменная      | Описание                                             |
+|-----------------|------------------------------------------------------|
+| `HIBP_API_KEY`  | Ключ HaveIBeenPwned (без него — демо-режим)          |
+| `APP_PASSWORD`  | Пароль Basic Auth (не задан — доступ открыт)         |
+
 ### Живые данные HIBP
 
 Без API-ключа сервис работает в демо-режиме. Для живых проверок:
@@ -65,11 +85,22 @@ set HIBP_API_KEY=ваш_ключ       # Windows PowerShell
 export HIBP_API_KEY=ваш_ключ    # Linux/macOS
 ```
 
+### Тесты
+
+```bash
+pip install pytest flake8
+pytest -q                       # 17 тестов
+flake8 app.py run.py tools db.py --select=E9,F63,F7,F82
+```
+
 ## Структура проекта
 
 ```
-├── app.py              # Flask-приложение и API-маршруты
+├── app.py              # Flask-приложение, API, лимиты, авторизация
 ├── run.py              # точка запуска (без reloader)
+├── db.py               # SQLite-история
+├── Dockerfile
+├── docker-compose.yml
 ├── requirements.txt
 ├── templates/
 │   └── index.html      # интерфейс
@@ -78,6 +109,11 @@ export HIBP_API_KEY=ваш_ключ    # Linux/macOS
 │   ├── app.js          # логика интерфейса
 │   ├── charts.js       # SVG-графики (donut/bar/gauge/line)
 │   └── totp.js         # клиентский TOTP (WebCrypto)
+├── tests/
+│   ├── conftest.py
+│   └── test_app.py     # 17 тестов
+├── .github/workflows/
+│   └── ci.yml          # линт + тесты
 └── tools/
     ├── network.py      # DNS, RDAP, IP, CIDR, MX, CVE
     ├── cert.py         # SSL-сертификаты
@@ -90,8 +126,10 @@ export HIBP_API_KEY=ваш_ключ    # Linux/macOS
 
 ## Дорожная карта
 
-- [ ] Dockerfile + docker-compose
-- [ ] Rate limiting на API
-- [ ] История проверок на сервере (SQLite)
-- [ ] Авторизация (проверка только своих данных)
-- [ ] CI (lint + тесты)
+- [x] Dockerfile + docker-compose
+- [x] Rate limiting на API
+- [x] История проверок на сервере (SQLite)
+- [x] Авторизация (опциональная, Basic Auth)
+- [x] CI (lint + тесты)
+- [ ] Telegram-бот-обёртка для ключевых инструментов
+- [ ] Экспорт отчёта в PDF
