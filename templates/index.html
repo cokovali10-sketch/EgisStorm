@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EgisStorm — Security Suite</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="layout">
+        <aside class="sidebar">
+            <div class="brand">
+                <h1>EgisStorm</h1>
+                <p>Security Suite</p>
+            </div>
+            <div class="score-mini" id="scoreMini" hidden>
+                <div class="score-ring small" id="scoreRing">—</div>
+                <span id="scoreTitleSmall">—</span>
+            </div>
+            <nav>
+                <p class="group">Breach &amp; Passwords</p>
+                <button class="nav active" data-tool="email">Email по утечкам</button>
+                <button class="nav" data-tool="password">Проверка пароля</button>
+                <button class="nav" data-tool="genpw">Генератор паролей</button>                <p class="group">Network Intel</p>
+                <button class="nav" data-tool="myip">Мой IP</button>
+                <button class="nav" data-tool="dns">DNS записи</button>
+                <button class="nav" data-tool="whois">WHOIS / RDAP</button>
+                <button class="nav" data-tool="ip">Инфо по IP</button>
+                <button class="nav" data-tool="ipwhois">Владелец IP</button>
+                <button class="nav" data-tool="portcheck">TCP порт</button>
+                <button class="nav" data-tool="cert">SSL сертификат</button>
+                <button class="nav" data-tool="headers">Security headers</button>
+                <button class="nav" data-tool="subnet">Subnet / CIDR</button>
+                <button class="nav" data-tool="mxcheck">Проверка MX</button>
+                <p class="group">Crypto &amp; Web</p>
+                <button class="nav" data-tool="hash">Хеширование</button>
+                <button class="nav" data-tool="b64">Base64</button>
+                <button class="nav" data-tool="jwt">JWT декодер</button>
+                <button class="nav" data-tool="urlcheck">Анализатор URL</button>
+                <button class="nav" data-tool="expand">Развёртка ссылки</button>
+                <button class="nav" data-tool="robots">robots.txt</button>
+                <button class="nav" data-tool="crypt">Шифрование AES</button>
+                <button class="nav" data-tool="cve">Поиск CVE</button>
+                <button class="nav" data-tool="totp">2FA / TOTP</button>
+                <button class="nav" data-tool="wg">WireGuard VPN</button>
+            </nav>
+            <section class="history">
+                <p class="group">История проверок</p>
+                <ul id="historyList" class="history-list"></ul>
+                <button type="button" class="ghost" id="btnClearHistory" style="width:100%;margin-top:6px">Очистить</button>
+            </section>
+            <footer class="side-foot">Ничего не хранится на сервере.</footer>
+        </aside>
+
+        <main class="content">
+            <section class="panel active" id="tool-email">
+                <h2>Email по утечкам</h2>
+                <p class="hint">Проверь, был ли твой адрес в известных утечках (HaveIBeenPwned).</p>
+                <form id="formEmail" class="row">
+                    <input type="email" name="email" placeholder="ваш@email.ru" required>
+                    <button type="submit">Проверить</button>
+                </form>
+                <div class="result" id="resultEmail"></div>
+            </section>
+
+            <section class="panel" id="tool-password">
+                <h2>Проверка пароля</h2>
+                <p class="hint">Сколько раз пароль встречался в утечках + оценка силы (Pwned Passwords).</p>
+                <form id="formPassword" class="row">
+                    <input type="password" name="password" placeholder="введите пароль" required>
+                    <button type="submit">Проверить</button>
+                </form>
+                <div class="result" id="resultPassword"></div>
+            </section>
+
+            <section class="panel" id="tool-genpw">
+                <h2>Генератор паролей</h2>
+                <p class="hint">Криптостойкие пароли через Python <code>secrets</code>.</p>
+                <div class="gen-controls">
+                    <label>Длина <input type="number" id="pwLength" value="20" min="8" max="64"></label>
+                    <label><input type="checkbox" id="pwNumbers" checked> Цифры</label>
+                    <label><input type="checkbox" id="pwSymbols" checked> Символы</label>
+                    <label><input type="checkbox" id="pwUpper" checked> Заглавные</label>
+                    <button type="button" id="btnGenPw">Сгенерировать</button>
+                </div>
+                <div class="result" id="resultGenPw"></div>
+            </section>
+
+            <section class="panel" id="tool-dns">
+                <h2>DNS записи</h2>
+                <p class="hint">Пассивный просмотр A, AAAA, NS, MX, TXT, CNAME записей домена.</p>
+                <form id="formDns" class="row">
+                    <input type="text" name="host" placeholder="example.com" required>
+                    <button type="submit">Разрешить</button>
+                </form>
+                <div class="result" id="resultDns"></div>
+            </section>
+
+            <section class="panel" id="tool-whois">
+                <h2>WHOIS / RDAP</h2>
+                <p class="hint">Регистратор, даты, статусы и NS из публичного реестра RDAP.</p>
+                <form id="formWhois" class="row">
+                    <input type="text" name="domain" placeholder="example.com" required>
+                    <button type="submit">Запросить</button>
+                </form>
+                <div class="result" id="resultWhois"></div>
+            </section>
+
+            <section class="panel" id="tool-ip">
+                <h2>Информация по IP</h2>
+                <p class="hint">Гео, ASN, провайдер, reverse DNS. Только публичные данные сети.</p>
+                <form id="formIp" class="row">
+                    <input type="text" name="ip" placeholder="8.8.8.8" required>
+                    <button type="submit">Определить</button>
+                </form>
+                <div class="result" id="resultIp"></div>
+            </section>
+
+            <section class="panel" id="tool-cert">
+                <h2>SSL сертификат</h2>
+                <p class="hint">Издатель, срок действия, SAN, TLS-версия и шифр удалённого хоста.</p>
+                <form id="formCert" class="row">
+                    <input type="text" name="host" placeholder="example.com" required>
+                    <button type="submit">Проверить</button>
+                </form>
+                <div class="result" id="resultCert"></div>
+            </section>
+
+            <section class="panel" id="tool-headers">
+                <h2>Security headers</h2>
+                <p class="hint">Аудит заголовков безопасности сайта (HSTS, CSP, X-Frame-Options и др.).</p>
+                <form id="formHeaders" class="row">
+                    <input type="text" name="url" placeholder="example.com" required>
+                    <button type="submit">Аудит</button>
+                </form>
+                <div class="result" id="resultHeaders"></div>
+            </section>
+
+            <section class="panel" id="tool-hash">
+                <h2>Хеширование</h2>
+                <p class="hint">MD5 / SHA-1 / SHA-2 / SHA-3 + определение алгоритма по длине.</p>
+                <form id="formHash" class="row">
+                    <input type="text" name="text" placeholder="текст для хеширования" required>
+                    <button type="submit">Хешировать</button>
+                </form>
+                <div class="result" id="resultHash"></div>
+            </section>
+
+            <section class="panel" id="tool-b64">
+                <h2>Base64</h2>
+                <p class="hint">Кодирование / декодирование.</p>
+                <div class="row">
+                    <input type="text" id="b64Text" placeholder="текст или base64">
+                    <button type="button" id="btnB64Enc">Закодировать</button>
+                    <button type="button" id="btnB64Dec">Декодировать</button>
+                </div>
+                <div class="result" id="resultB64"></div>
+            </section>
+
+            <section class="panel" id="tool-jwt">
+                <h2>JWT декодер</h2>
+                <p class="hint">Разбор header/payload, проверка alg=none, exp, nbf.</p>
+                <form id="formJwt" class="col">
+                    <textarea name="token" placeholder="eyJhbGciOi..."></textarea>
+                    <button type="submit">Декодировать</button>
+                </form>
+                <div class="result" id="resultJwt"></div>
+            </section>
+
+            <section class="panel" id="tool-urlcheck">
+                <h2>Анализатор URL</h2>
+                <p class="hint">Индикаторы фишинга: HTTPS, IP-хост, punycode, короткие ссылки, TLD.</p>
+                <form id="formUrl" class="row">
+                    <input type="text" name="url" placeholder="https://example.com/path" required>
+                    <button type="submit">Анализировать</button>
+                </form>
+                <div class="result" id="resultUrl"></div>
+            </section>
+
+            <section class="panel" id="tool-ipwhois">
+                <h2>Владелец IP</h2>
+                <p class="hint">Кому принадлежит адрес: организация, страна, диапазон сети (RDAP).</p>
+                <form id="formIpwhois" class="row">
+                    <input type="text" name="ip" placeholder="8.8.8.8" required>
+                    <button type="submit">Найти владельца</button>
+                </form>
+                <div class="result" id="resultIpwhois"></div>
+            </section>
+
+            <section class="panel" id="tool-subnet">
+                <h2>Subnet / CIDR</h2>
+                <p class="hint">Калькулятор подсети: диапазон, маска, broadcast, число хостов.</p>
+                <form id="formSubnet" class="row">
+                    <input type="text" name="cidr" placeholder="192.168.1.0/24" required>
+                    <button type="submit">Рассчитать</button>
+                </form>
+                <div class="result" id="resultSubnet"></div>
+            </section>
+
+            <section class="panel" id="tool-mxcheck">
+                <h2>Проверка MX</h2>
+                <p class="hint">Есть ли почтовые сервера у домена и не одноразовый ли это email (анти-фишинг).</p>
+                <form id="formMx" class="row">
+                    <input type="email" name="email" placeholder="имя@домен.ru" required>
+                    <button type="submit">Проверить</button>
+                </form>
+                <div class="result" id="resultMx"></div>
+            </section>
+
+            <section class="panel" id="tool-expand">
+                <h2>Развёртка ссылки</h2>
+                <p class="hint">Показывает цепочку редиректов короткой ссылки до конечного URL.</p>
+                <form id="formExpand" class="row">
+                    <input type="text" name="url" placeholder="https://bit.ly/xyz" required>
+                    <button type="submit">Развернуть</button>
+                </form>
+                <div class="result" id="resultExpand"></div>
+            </section>
+
+            <section class="panel" id="tool-cve">
+                <h2>Поиск CVE</h2>
+                <p class="hint">Уязвимости по названию продукта/версии (база CVE через NVD).</p>
+                <form id="formCve" class="row">
+                    <input type="text" name="query" placeholder="openssh 9.0" required>
+                    <button type="submit">Искать</button>
+                </form>
+                <div class="result" id="resultCve"></div>
+            </section>
+
+            <section class="panel" id="tool-myip">
+                <h2>Мой IP</h2>
+                <p class="hint">Твой внешний адрес, гео и провайдер — только твои данные.</p>
+                <button type="button" id="btnMyIp">Определить</button>
+                <div class="result" id="resultMyIp"></div>
+            </section>
+
+            <section class="panel" id="tool-portcheck">
+                <h2>TCP порт</h2>
+                <p class="hint">Открыт ли порт на хосте + проверка общих сервисов (для своей инфраструктуры).</p>
+                <form id="formPort" class="row">
+                    <input type="text" name="host" placeholder="example.com" required>
+                    <input type="text" name="port" placeholder="443 (порт)" style="flex:0 0 120px">
+                    <button type="submit">Проверить</button>
+                    <button type="button" class="ghost" id="btnCommonPorts">Общие порты</button>
+                </form>
+                <div class="result" id="resultPort"></div>
+            </section>
+
+            <section class="panel" id="tool-robots">
+                <h2>robots.txt</h2>
+                <p class="hint">Просмотр правил robots.txt сайта: какие разделы запрещены и sitemap.</p>
+                <form id="formRobots" class="row">
+                    <input type="text" name="url" placeholder="example.com" required>
+                    <button type="submit">Просмотреть</button>
+                </form>
+                <div class="result" id="resultRobots"></div>
+            </section>
+
+            <section class="panel" id="tool-crypt">
+                <h2>Шифрование AES</h2>
+                <p class="hint">Образовательный инструмент: AES-256-CBC + PKCS7. Ключ выводится из пароля (SHA-256).</p>
+                <div class="col">
+                    <textarea id="cryptText" placeholder="текст для шифрования или base64 для расшифровки"></textarea>
+                    <input type="text" id="cryptKey" placeholder="пароль-ключ" style="width:100%">
+                    <div class="row">
+                        <button type="button" id="btnCryptEnc">Зашифровать</button>
+                        <button type="button" class="ghost" id="btnCryptDec">Расшифровать</button>
+                    </div>
+                </div>
+                <div class="result" id="resultCrypt"></div>
+            </section>
+
+            <section class="panel" id="tool-totp">
+                <h2>2FA / TOTP</h2>
+                <p class="hint">Генерация секрета и QR для Google Authenticator / Aegis.</p>
+                <button type="button" id="btnTotp">Создать ключ 2FA</button>
+                <div class="result" id="resultTotp"></div>
+            </section>
+
+            <section class="panel" id="tool-wg">
+                <h2>WireGuard VPN</h2>
+                <p class="hint">Генератор клиентского конфига и Curve25519 ключей для <b>вашего</b> сервера.</p>
+                <form id="formWg" class="col">
+                    <input type="text" name="server_pubkey" placeholder="публичный ключ сервера (base64)" required>
+                    <input type="text" name="endpoint" placeholder="vpn.example.com:51820" required>
+                    <button type="submit">Создать конфиг</button>
+                </form>
+                <div class="result" id="resultWg"></div>
+            </section>
+        </main>
+    </div>
+
+    <div id="toasts" class="toasts"></div>
+
+    <script src="{{ url_for('static', filename='charts.js') }}"></script>
+    <script src="{{ url_for('static', filename='totp.js') }}"></script>
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
