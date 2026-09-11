@@ -1,135 +1,229 @@
-# EgisStorm — Security Suite
+<div align="center">
 
-Набор из 24 инструментов кибербезопасности для самопроверки и аудита своей инфраструктуры.
-Всё работает локально, ничего не хранится на сервере.
+# EgisStorm
 
-> **Назначение:** только проверка *своих* данных и *своей* инфраструктуры.
-> Инструменты OSINT работают исключительно с публичными данными (DNS, RDAP, SSL-сертификаты)
-> и не раскрывают персональные данные третьих лиц.
+### Comprehensive Security Audit Suite — 24 Tools, Zero Trust Assumptions
 
-## Возможности
+[![CI](https://img.shields.io/badge/CI-GitHub%20Actions-2088FF?logo=githubactions&logoColor=white)](#)
+[![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![Flask](https://img.shields.io/badge/Flask-3.x-000000?logo=flask&logoColor=white)](https://flask.palletsprojects.com/)
+[![License](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
+[![Tests](https://img.shields.io/badge/Tests-17+-green.svg)](#testing)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](#docker)
 
-### Breach & Passwords
-- **Email по утечкам** — проверка своего адреса по базе HaveIBeenPwned (график утечек по годам)
-- **Проверка пароля** — сколько раз пароль встречался в утечках (Pwned Passwords) + оценка силы
-- **Генератор паролей** — криптостойкие пароли через Python `secrets`
+A local-first security audit platform with 24 tools spanning breach analysis, network intelligence, cryptographic utilities, and web security — all running entirely on your machine with nothing stored externally.
 
-### Network Intel
-- **Мой IP** — внешний адрес, гео, провайдер
-- **DNS записи** — A / AAAA / CNAME / NS / MX / TXT
-- **WHOIS / RDAP** — регистратор, даты, статусы домена
-- **Инфо по IP** — гео, ASN, reverse DNS (ipwho.is)
-- **Владелец IP** — организация и диапазон сети через RDAP
-- **TCP порт** — проверка порта + скан общих сервисов
-- **SSL сертификат** — издатель, SAN, срок действия, TLS-версия
-- **Security headers** — аудит HSTS, CSP, X-Frame-Options и др. с оценкой
-- **Subnet / CIDR** — калькулятор подсетей
-- **Проверка MX** — почтовые серверы домена + детект одноразовых доменов
+> **Purpose:** Audit *your own* infrastructure and data. OSINT tools use only public data (DNS, RDAP, SSL certificates) and never expose third-party personal information.
 
-### Crypto & Web
-- **Хеширование** — MD5 / SHA-1 / SHA-2 / SHA-3 + определение алгоритма
-- **Base64** — кодирование / декодирование
-- **JWT декодер** — проверка `alg=none`, `exp`, `nbf`
-- **Анализатор URL** — индикаторы фишинга (HTTPS, IP-хост, punycode, шортнеры)
-- **Развёртка ссылки** — цепочка редиректов коротких URL
-- **robots.txt** — правила сайта и sitemap
-- **Шифрование AES** — AES-256-CBC + PKCS7 (образовательный)
-- **Поиск CVE** — уязвимости по продукту через NVD
-- **2FA / TOTP** — генерация секрета и QR, автообновляемый код в браузере
-- **WireGuard VPN** — генерация клиентского конфига и Curve25519 ключей
+</div>
 
-Интерактив: SVG-графики без внешних зависимостей, история проверок (localStorage + серверная SQLite),
-экспорт результатов в JSON, тост-уведомления.
+---
 
-Дополнительно:
-- **Rate limiting** — защита API (flask-limiter, 120 запросов/час, строже на внешних инструментах)
-- **Серверная история** — SQLite (пароли и ключи в логах маскируются)
-- **Опциональная авторизация** — Basic Auth через переменную `APP_PASSWORD`
-- **Docker** — готовые Dockerfile и docker-compose
-- **CI** — GitHub Actions: линт + pytest
+## Features
 
-## Технологии
+### Breach & Password Analysis
+| Tool | Description |
+|------|-------------|
+| **Email Breach Check** | Check your email against HaveIBeenPwned with year-by-year breach timeline |
+| **Password Strength** | Pwned Passwords frequency check + cryptographic strength scoring |
+| **Password Generator** | Cryptographically secure passwords via Python `secrets` |
 
-- **Backend:** Python 3.12, Flask, flask-limiter, SQLite
-- **Frontend:** HTML / CSS / JS (vanilla, без фреймворков)
-- **Библиотеки:** requests, dnspython, phonenumbers, pyotp, qrcode, cryptography, PyNaCl
+### Network Intelligence
+| Tool | Description |
+|------|-------------|
+| **My IP** | External address, geolocation, and ISP identification |
+| **DNS Records** | A / AAAA / CNAME / NS / MX / TXT record enumeration |
+| **WHOIS / RDAP** | Registrar, creation/expiry dates, domain status flags |
+| **IP Info** | Geolocation, ASN, reverse DNS via ipwho.is |
+| **IP Owner** | Organization and network range lookup via RDAP |
+| **TCP Port Check** | Port scan + common service detection |
+| **SSL Certificate** | Issuer, SANs, validity period, TLS version |
+| **Security Headers** | HSTS, CSP, X-Frame-Options audit with scoring |
+| **Subnet / CIDR** | Subnet calculator and CIDR notation converter |
+| **MX Validator** | Mail server inspection + disposable domain detection |
 
-## Установка и запуск
+### Cryptography & Encoding
+| Tool | Description |
+|------|-------------|
+| **Hashing** | MD5 / SHA-1 / SHA-2 / SHA-3 with algorithm identification |
+| **Base64** | Encode / decode with format detection |
+| **AES Encryption** | AES-256-CBC with PKCS7 padding (educational) |
+| **2FA / TOTP** | Secret generation, QR code, and auto-refreshing browser code |
+
+### Web & API Security
+| Tool | Description |
+|------|-------------|
+| **JWT Decoder** | `alg=none` detection, `exp` / `nbf` validation |
+| **URL Analyzer** | Phishing indicators — HTTPS, IP-host, punycode, shorteners |
+| **URL Unwrapper** | Full redirect chain resolution for shortened URLs |
+| **robots.txt** | Site rules and sitemap inspection |
+| **CVE Search** | Vulnerability lookup by product via NVD |
+| **WireGuard VPN** | Client config and Curve25519 key generation |
+
+### Interactive Features
+- SVG charts (donut, bar, gauge, line) — zero external dependencies
+- Check history (localStorage + server-side SQLite)
+- JSON export of all results
+- Toast notifications for action feedback
+
+---
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    BROWSER (SPA)                        │
+│   HTML/CSS/JS · SVG Charts · WebCrypto TOTP             │
+└──────────────────────┬──────────────────────────────────┘
+                       │ REST API
+┌──────────────────────▼──────────────────────────────────┐
+│                  FLASK APPLICATION                       │
+│          Rate Limiting · Basic Auth · CORS              │
+├──────────┬──────────┬──────────┬──────────┬────────────┤
+│ network  │  cert    │ webcheck │  crypto  │ portcheck  │
+│   .py    │   .py    │   .py    │   .py    │    .py     │
+└──────────┴──────────┴──────────┴──────────┴────────────┘
+                       │
+┌──────────────────────▼──────────────────────────────────┐
+│              SQLite (History · Audit Logs)               │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Key Design Decisions:**
+- **Local-first:** No data leaves your machine unless you configure external API keys
+- **Rate-limited:** 120 requests/hour global, stricter on external API tools
+- **Zero frontend dependencies:** Vanilla JS with SVG charting — no npm, no build step
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Backend | Python 3.12, Flask, flask-limiter |
+| Database | SQLite (audit history, masked passwords/keys in logs) |
+| Frontend | HTML5 / CSS3 / Vanilla JavaScript |
+| Cryptography | `cryptography`, `PyNaCl`, `pyotp`, `qrcode` |
+| Networking | `requests`, `dnspython`, `phonenumbers` |
+| Infrastructure | Docker, docker-compose, GitHub Actions CI |
+
+---
+
+## Quick Start
+
+### Prerequisites
+- Python 3.12+
+- (Optional) Docker & Docker Compose
+- (Optional) HIBP API key for live breach checks
+
+### Local Installation
 
 ```bash
+# Clone the repository
+git clone https://github.com/yourname/EgisStorm.git
+cd EgisStorm
+
+# Create virtual environment
 python -m venv .venv
 .venv\Scripts\activate          # Windows
+# source .venv/bin/activate    # Linux/macOS
+
+# Install dependencies
 pip install -r requirements.txt
-python run.py                   # http://127.0.0.1:5000
+
+# Launch
+python run.py                  # http://127.0.0.1:5000
 ```
 
 ### Docker
 
 ```bash
-docker compose up --build
+docker compose up --build      # http://localhost
 ```
 
-### Переменные окружения
+---
 
-| Переменная      | Описание                                             |
-|-----------------|------------------------------------------------------|
-| `HIBP_API_KEY`  | Ключ HaveIBeenPwned (без него — демо-режим)          |
-| `APP_PASSWORD`  | Пароль Basic Auth (не задан — доступ открыт)         |
+## Configuration
 
-### Живые данные HIBP
+### Environment Variables
 
-Без API-ключа сервис работает в демо-режиме. Для живых проверок:
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `HIBP_API_KEY` | No | HaveIBeenPwned API key (without it: demo mode) |
+| `APP_PASSWORD` | No | Basic Auth password (unset: open access) |
+
+### HIBP Live Data
+
+Without an API key, breach checks run in demo mode. For live verification:
 
 ```bash
-set HIBP_API_KEY=ваш_ключ       # Windows PowerShell
-export HIBP_API_KEY=ваш_ключ    # Linux/macOS
+# Windows PowerShell
+set HIBP_API_KEY=your_key_here
+
+# Linux/macOS
+export HIBP_API_KEY=your_key_here
 ```
 
-### Тесты
+---
+
+## Testing
 
 ```bash
 pip install pytest flake8
-pytest -q                       # 17 тестов
+pytest -q                       # 17 tests
 flake8 app.py run.py tools db.py --select=E9,F63,F7,F82
 ```
 
-## Структура проекта
+---
+
+## Project Structure
 
 ```
-├── app.py              # Flask-приложение, API, лимиты, авторизация
-├── run.py              # точка запуска (без reloader)
-├── db.py               # SQLite-история
+EgisStorm/
+├── app.py                  # Flask app, API routes, rate limiting, auth
+├── run.py                  # Entry point (no reloader)
+├── db.py                   # SQLite history layer
 ├── Dockerfile
 ├── docker-compose.yml
 ├── requirements.txt
 ├── templates/
-│   └── index.html      # интерфейс
+│   └── index.html          # Single-page interface
 ├── static/
 │   ├── style.css
-│   ├── app.js          # логика интерфейса
-│   ├── charts.js       # SVG-графики (donut/bar/gauge/line)
-│   └── totp.js         # клиентский TOTP (WebCrypto)
+│   ├── app.js              # UI logic
+│   ├── charts.js           # SVG: donut / bar / gauge / line
+│   └── totp.js             # Client-side TOTP (WebCrypto)
 ├── tests/
 │   ├── conftest.py
-│   └── test_app.py     # 17 тестов
+│   └── test_app.py         # 17 tests
 ├── .github/workflows/
-│   └── ci.yml          # линт + тесты
+│   └── ci.yml              # Lint + test pipeline
 └── tools/
-    ├── network.py      # DNS, RDAP, IP, CIDR, MX, CVE
-    ├── cert.py         # SSL-сертификаты
-    ├── webcheck.py     # headers, URL-анализ, редиректы
-    ├── crypto_tools.py # хеши, base64, пароли
-    ├── crypt_tool.py   # AES-256-CBC
-    ├── jwt_tool.py     # JWT-декодер
-    └── portcheck.py    # TCP-порты, robots.txt
+    ├── network.py          # DNS, RDAP, IP, CIDR, MX, CVE
+    ├── cert.py             # SSL certificates
+    ├── webcheck.py         # Headers, URL analysis, redirects
+    ├── crypto_tools.py     # Hashes, Base64, passwords
+    ├── crypt_tool.py       # AES-256-CBC
+    ├── jwt_tool.py         # JWT decoder
+    └── portcheck.py        # TCP ports, robots.txt
 ```
 
-## Дорожная карта
+---
 
-- [x] Dockerfile + docker-compose
-- [x] Rate limiting на API
-- [x] История проверок на сервере (SQLite)
-- [x] Авторизация (опциональная, Basic Auth)
-- [x] CI (lint + тесты)
-- [ ] Telegram-бот-обёртка для ключевых инструментов
-- [ ] Экспорт отчёта в PDF
+## Roadmap
+
+- [x] Docker + docker-compose
+- [x] Rate limiting (flask-limiter)
+- [x] Server-side audit history (SQLite)
+- [x] Optional Basic Auth
+- [x] CI pipeline (lint + tests)
+- [ ] Telegram bot wrapper for key tools
+- [ ] PDF report export
+
+---
+
+## License
+
+[Apache License 2.0](LICENSE)
+
+> **Disclaimer:** This toolset is for authorized security auditing of your own systems. Always obtain proper authorization before testing infrastructure you do not own.
