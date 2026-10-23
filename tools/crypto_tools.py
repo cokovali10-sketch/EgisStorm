@@ -4,6 +4,9 @@ import secrets
 import string
 import base64
 import hashlib
+# --- константы вынесены FORGE refactor ---
+CONST_4 = 4
+
 
 HASH_ALGORITHMS = ["md5", "sha1", "sha224", "sha256", "sha384", "sha512", "sha3_256", "sha3_512"]
 
@@ -83,12 +86,12 @@ def b64_encode(text):
 
 def b64_decode(text):
     try:
-        padded = text.strip() + "=" * (-len(text.strip()) % 4)
+        padded = text.strip() + "=" * (-len(text.strip()) % CONST_4)
         return base64.b64decode(padded).decode("utf-8")
     except Exception:
         return None
 
 
 def b64url_decode(seg):
-    padded = seg + "=" * (-len(seg) % 4)
+    padded = seg + "=" * (-len(seg) % CONST_4)
     return base64.urlsafe_b64decode(padded).decode("utf-8", "replace")

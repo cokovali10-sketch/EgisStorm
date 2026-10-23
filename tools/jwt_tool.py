@@ -1,12 +1,15 @@
 import json
 
 from tools.crypto_tools import b64url_decode
+# --- константы вынесены FORGE refactor ---
+CONST_3 = 3
+
 
 
 def jwt_decode(token):
     token = token.strip()
     parts = token.split(".")
-    if len(parts) != 3:
+    if len(parts) != CONST_3:
         return {"error": "JWT должен состоять из 3 частей (header.payload.signature)."}
     try:
         header = json.loads(b64url_decode(parts[0]))
@@ -40,6 +43,6 @@ def jwt_decode(token):
         "header": header,
         "payload": payload,
         "signature": parts[2],
-        "signature_hex_length": len(parts[2]) * 3 // 4,
+        "signature_hex_length": len(parts[2]) * CONST_3 // 4,
         "findings": findings,
     }

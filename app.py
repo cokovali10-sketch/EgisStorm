@@ -13,6 +13,12 @@ from flask_limiter.util import get_remote_address
 from db import get_history, init_db, log_history
 from tools import cert as cert_tool
 from tools import crypt_tool, crypto_tools, jwt_tool, network, portcheck, webcheck
+# --- константы вынесены FORGE refactor ---
+CONST_5 = 5
+CONST_60 = 60
+CONST_200 = 200
+CONST_400 = 400
+
 
 app = Flask(__name__)
 app.config["RATELIMIT_STORAGE_URI"] = "memory://"
@@ -63,7 +69,7 @@ def hibp_email_lookup(email):
             headers={"hibp-api-key": HIBP_API_KEY, "user-agent": USER_AGENT},
             timeout=10,
         )
-        if resp.status_code == 200:
+        if resp.status_code == CONST_200:
             return {"mode": "live", "breaches": resp.json(), "error": None}
         if resp.status_code == 404:
             return {"mode": "live", "breaches": [], "error": None}
@@ -78,7 +84,7 @@ def pwned_password_count(password):
     import hashlib
 
     sha1 = hashlib.sha1(password.encode("utf-8")).hexdigest().upper()
-    prefix, suffix = sha1[:5], sha1[5:]
+    prefix, suffix = sha1[:CONST_5], sha1[CONST_5:]
     try:
         resp = requests.get(f"{PWNED_PASSWORDS_URL}{prefix}", timeout=10)
         resp.raise_for_status()
@@ -164,9 +170,9 @@ def log_api_calls(response):
             if k in ("password", "passphrase", "token"):
                 sanitized[k] = "***"
             else:
-                sanitized[k] = (v[:60] + "…") if isinstance(v, str) and len(v) > 60 else v
+                sanitized[k] = (v[:CONST_60] + "…") if isinstance(v, str) and len(v) > CONST_60 else v
         summary = response.status_code
-        log_history(request.path.split("/")[-1], json.dumps(sanitized, ensure_ascii=False)[:200], summary)
+        log_history(request.path.split("/")[-1], json.dumps(sanitized, ensure_ascii=False)[:CONST_200], summary)
     return response
 
 
@@ -181,7 +187,7 @@ def api_email():
     data = request.get_json(silent=True) or {}
     email = (data.get("email") or "").strip().lower()
     if not email or "@" not in email:
-        return jsonify({"error": "Enter a valid email address."}), 400
+        return jsonify({"error": "Enter a valid email address."}), CONST_400
     result = hibp_email_lookup(email)
     result["email"] = email
     return jsonify(result)
@@ -193,7 +199,7 @@ def api_password():
     data = request.get_json(silent=True) or {}
     password = data.get("password") or ""
     if not password:
-        return jsonify({"error": "Enter a password to check."}), 400
+        return jsonify({"error": "Enter a password to check."}), CONST_400
     count = pwned_password_count(password)
     if count is None:
         return jsonify({"error": "Pwned Passwords service unavailable."}), 502
@@ -231,7 +237,7 @@ def api_phone():
     data = request.get_json(silent=True) or {}
     number = (data.get("phone") or "").strip()
     if not number:
-        return jsonify({"error": "Enter a phone number."}), 400
+        return jsonify({"error": "Enter a phone number."}), CONST_400
     return jsonify(phone_info(number))
 
 
@@ -246,7 +252,7 @@ def api_wireguard():
     server_pubkey = (data.get("server_pubkey") or "").strip()
     endpoint = (data.get("endpoint") or "").strip()
     if not server_pubkey or not endpoint:
-        return jsonify({"error": "Нужен публичный ключ сервера и endpoint (например, vpn.example.com:51820)."}), 400
+        return jsonify({"error": "Нужен публичный ключ сервера и endpoint (например, vpn.example.com:51820)."}), CONST_400
     client_private, client_public = wireguard_pair()
     config = (
         "[Interface]\n"
@@ -268,7 +274,7 @@ def api_dns():
     data = request.get_json(silent=True) or {}
     host = (data.get("host") or "").strip()
     if not host:
-        return jsonify({"error": "Введите домен."}), 400
+        return jsonify({"error": "Введите домен."}), CONST_400
     return jsonify(network.dns_records(host))
 
 
@@ -278,7 +284,7 @@ def api_whois():
     data = request.get_json(silent=True) or {}
     target = (data.get("domain") or "").strip()
     if not target:
-        return jsonify({"error": "Введите домен."}), 400
+        return jsonify({"error": "Введите домен."}), CONST_400
     return jsonify(network.rdap_lookup(target, "domain"))
 
 
@@ -288,7 +294,7 @@ def api_ip():
     data = request.get_json(silent=True) or {}
     ip = (data.get("ip") or "").strip()
     if not ip:
-        return jsonify({"error": "Введите IP-адрес."}), 400
+        return jsonify({"error": "Введите IP-адрес."}), CONST_400
     return jsonify(network.ip_info(ip))
 
 
@@ -298,7 +304,7 @@ def api_cert():
     data = request.get_json(silent=True) or {}
     host = (data.get("host") or "").strip()
     if not host:
-        return jsonify({"error": "Введите хост."}), 400
+        return jsonify({"error": "Введите хост."}), CONST_400
     return jsonify(cert_tool.ssl_cert_info(host))
 
 
@@ -308,7 +314,7 @@ def api_headers():
     data = request.get_json(silent=True) or {}
     url = (data.get("url") or "").strip()
     if not url:
-        return jsonify({"error": "Введите URL."}), 400
+        return jsonify({"error": "Введите URL."}), CONST_400
     return jsonify(webcheck.security_headers(url))
 
 
@@ -317,7 +323,7 @@ def api_hash():
     data = request.get_json(silent=True) or {}
     text = (data.get("text") or "")
     if not text:
-        return jsonify({"error": "Введите текст."}), 400
+        return jsonify({"error": "Введите текст."}), CONST_400
     hashes = crypto_tools.compute_hashes(text)
     return jsonify({"text": text, "hashes": hashes, "identify": crypto_tools.identify_hash(text.strip())})
 
@@ -328,12 +334,12 @@ def api_b64():
     text = (data.get("text") or "")
     mode = data.get("mode") or "encode"
     if not text:
-        return jsonify({"error": "Введите текст."}), 400
+        return jsonify({"error": "Введите текст."}), CONST_400
     if mode == "encode":
         return jsonify({"result": crypto_tools.b64_encode(text), "mode": mode})
     decoded = crypto_tools.b64_decode(text)
     if decoded is None:
-        return jsonify({"error": "Не валидный Base64."}), 400
+        return jsonify({"error": "Не валидный Base64."}), CONST_400
     return jsonify({"result": decoded, "mode": mode})
 
 
@@ -342,7 +348,7 @@ def api_jwt():
     data = request.get_json(silent=True) or {}
     token = (data.get("token") or "").strip()
     if not token:
-        return jsonify({"error": "Вставьте JWT-токен."}), 400
+        return jsonify({"error": "Вставьте JWT-токен."}), CONST_400
     return jsonify(jwt_tool.jwt_decode(token))
 
 
@@ -351,7 +357,7 @@ def api_urlcheck():
     data = request.get_json(silent=True) or {}
     url = (data.get("url") or "").strip()
     if not url:
-        return jsonify({"error": "Введите URL."}), 400
+        return jsonify({"error": "Введите URL."}), CONST_400
     return jsonify(webcheck.url_analysis(url))
 
 
@@ -361,7 +367,7 @@ def api_ipwhois():
     data = request.get_json(silent=True) or {}
     ip = (data.get("ip") or "").strip()
     if not ip:
-        return jsonify({"error": "Введите IP-адрес."}), 400
+        return jsonify({"error": "Введите IP-адрес."}), CONST_400
     return jsonify(network.rdap_lookup(ip, "ip"))
 
 
@@ -370,7 +376,7 @@ def api_subnet():
     data = request.get_json(silent=True) or {}
     cidr = (data.get("cidr") or "").strip()
     if not cidr:
-        return jsonify({"error": "Введите сеть в формате CIDR (например, 192.168.1.0/24)."}), 400
+        return jsonify({"error": "Введите сеть в формате CIDR (например, 192.168.1.0/24)."}), CONST_400
     return jsonify(network.subnet_calc(cidr))
 
 
@@ -380,7 +386,7 @@ def api_expand():
     data = request.get_json(silent=True) or {}
     url = (data.get("url") or "").strip()
     if not url:
-        return jsonify({"error": "Введите ссылку."}), 400
+        return jsonify({"error": "Введите ссылку."}), CONST_400
     return jsonify(webcheck.expand_url(url))
 
 
@@ -390,7 +396,7 @@ def api_mxcheck():
     data = request.get_json(silent=True) or {}
     email = (data.get("email") or "").strip()
     if not email or "@" not in email:
-        return jsonify({"error": "Введите корректный email."}), 400
+        return jsonify({"error": "Введите корректный email."}), CONST_400
     return jsonify(network.mx_check(email))
 
 
@@ -400,7 +406,7 @@ def api_cve():
     data = request.get_json(silent=True) or {}
     query = (data.get("query") or "").strip()
     if not query:
-        return jsonify({"error": "Введите название продукта (например, openssh 9.0)."}), 400
+        return jsonify({"error": "Введите название продукта (например, openssh 9.0)."}), CONST_400
     return jsonify(network.cve_search(query))
 
 
@@ -410,12 +416,12 @@ def api_portcheck():
     data = request.get_json(silent=True) or {}
     host = (data.get("host") or "").strip()
     if not host:
-        return jsonify({"error": "Введите хост."}), 400
+        return jsonify({"error": "Введите хост."}), CONST_400
     if data.get("common"):
         return jsonify(portcheck.common_ports_scan(host))
     port = (data.get("port") or "").strip()
     if not port:
-        return jsonify({"error": "Укажите порт или включите проверку общих портов."}), 400
+        return jsonify({"error": "Укажите порт или включите проверку общих портов."}), CONST_400
     return jsonify(portcheck.tcp_check(host, port))
 
 
@@ -425,7 +431,7 @@ def api_robots():
     data = request.get_json(silent=True) or {}
     url = (data.get("url") or "").strip()
     if not url:
-        return jsonify({"error": "Введите URL."}), 400
+        return jsonify({"error": "Введите URL."}), CONST_400
     return jsonify(portcheck.robots_txt(url))
 
 
@@ -436,14 +442,14 @@ def api_crypt():
     passphrase = (data.get("passphrase") or "").strip()
     mode = (data.get("mode") or "encrypt")
     if not text:
-        return jsonify({"error": "Введите текст."}), 400
+        return jsonify({"error": "Введите текст."}), CONST_400
     if not passphrase:
-        return jsonify({"error": "Введите пароль-ключ."}), 400
+        return jsonify({"error": "Введите пароль-ключ."}), CONST_400
     if mode == "encrypt":
         return jsonify({"result": crypt_tool.aes_encrypt(text, passphrase), "mode": mode, "algo": "AES-256-CBC + PKCS7"})
     result = crypt_tool.aes_decrypt(text, passphrase)
     if "error" in result:
-        return jsonify(result), 400
+        return jsonify(result), CONST_400
     return jsonify({"result": result["text"], "mode": mode, "algo": "AES-256-CBC + PKCS7"})
 
 

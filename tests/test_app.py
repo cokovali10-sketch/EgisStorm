@@ -3,17 +3,24 @@ import hashlib
 import json
 
 import pytest
+# --- константы вынесены FORGE refactor ---
+CONST_5 = 5
+CONST_44 = 44
+CONST_200 = 200
+CONST_400 = 400
+CONST_429 = 429
+
 
 
 def test_index(client):
     r = client.get("/")
-    assert r.status_code == 200
+    assert r.status_code == CONST_200
     assert "EgisStorm" in r.get_data(as_text=True)
 
 
 def test_hash_correctness(client):
     r = client.post("/api/hash", json={"text": "hello"})
-    assert r.status_code == 200
+    assert r.status_code == CONST_200
     d = r.get_json()
     assert d["hashes"]["sha256"] == hashlib.sha256(b"hello").hexdigest()
     assert d["hashes"]["sha512"] == hashlib.sha512(b"hello").hexdigest()
@@ -37,7 +44,7 @@ def test_crypt_roundtrip(client):
     dec = client.post("/api/crypt", json={"text": enc["result"], "passphrase": "key", "mode": "decrypt"}).get_json()
     assert dec["result"] == "secret hello"
     wrong = client.post("/api/crypt", json={"text": enc["result"], "passphrase": "wrong", "mode": "decrypt"})
-    assert wrong.status_code == 400
+    assert wrong.status_code == CONST_400
 
 
 def test_subnet(client):
@@ -50,7 +57,7 @@ def test_subnet(client):
 
 def test_subnet_invalid(client):
     r = client.post("/api/subnet", json={"cidr": "not-a-network"})
-    assert r.status_code == 200
+    assert r.status_code == CONST_200
     assert "error" in r.get_json()
 
 
@@ -63,11 +70,11 @@ def test_phone_valid(client):
 def test_password_pwned(client, monkeypatch):
     import app as app_module
 
-    monkeypatch.setattr(app_module, "pwned_password_count", lambda p: 5)
+    monkeypatch.setattr(app_module, "pwned_password_count", lambda p: CONST_5)
     r = client.post("/api/password", json={"password": "abc12345"})
-    assert r.status_code == 200
+    assert r.status_code == CONST_200
     d = r.get_json()
-    assert d["pwned_count"] == 5
+    assert d["pwned_count"] == CONST_5
     assert "strength" in d
 
 
@@ -79,7 +86,7 @@ def test_email_demo_mode(client):
 
 def test_email_invalid(client):
     r = client.post("/api/email", json={"email": "not-an-email"})
-    assert r.status_code == 400
+    assert r.status_code == CONST_400
 
 
 def test_wireguard(client):
@@ -87,8 +94,8 @@ def test_wireguard(client):
         "/api/wireguard",
         json={"server_pubkey": "abc123=", "endpoint": "vpn.example.com:51820"},
     ).get_json()
-    assert len(d["client_private"]) == 44
-    assert len(d["client_public"]) == 44
+    assert len(d["client_private"]) == CONST_44
+    assert len(d["client_public"]) == CONST_44
     assert "[Interface]" in d["config"]
 
 
@@ -122,8 +129,8 @@ def test_rate_limit(client):
     codes = []
     for _ in range(125):
         codes.append(client.post("/api/hash", json={"text": "x"}).status_code)
-    assert 429 in codes
-    assert codes.count(429) >= 1
+    assert CONST_429 in codes
+    assert codes.count(CONST_429) >= 1
 
 
 def test_auth_guard(client):
@@ -134,6 +141,6 @@ def test_auth_guard(client):
     try:
         assert client.get("/").status_code == 401
         r = client.get("/", headers={"Authorization": "Basic YWRtaW46c2VjcmV0"})
-        assert r.status_code == 200
+        assert r.status_code == CONST_200
     finally:
         monkeypatch.undo()

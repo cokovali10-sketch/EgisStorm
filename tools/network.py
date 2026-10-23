@@ -3,6 +3,12 @@ import socket
 
 import dns.resolver
 import requests
+# --- константы вынесены FORGE refactor ---
+CONST_3 = 3
+CONST_6 = 6
+CONST_20 = 20
+CONST_200 = 200
+
 
 RDAP_DOMAIN = "https://rdap.org/domain/"
 RDAP_IP = "https://rdap.org/ip/"
@@ -21,7 +27,7 @@ def dns_records(host):
         return {"error": "Введите домен."}
     resolver = dns.resolver.Resolver()
     resolver.timeout = 5
-    resolver.lifetime = 6
+    resolver.lifetime = CONST_6
     records = {}
     for rtype in ("A", "AAAA", "CNAME", "NS", "MX", "TXT"):
         try:
@@ -48,7 +54,7 @@ def rdap_lookup(target, kind="domain"):
         resp = requests.get(url, timeout=10, headers={"Accept": "application/rdap+json"})
         if resp.status_code == 404:
             return {"error": f"Объект {target} не найден в RDAP."}
-        if resp.status_code != 200:
+        if resp.status_code != CONST_200:
             return {"error": f"RDAP ответил {resp.status_code}."}
         data = resp.json()
     except requests.RequestException as exc:
@@ -59,7 +65,7 @@ def rdap_lookup(target, kind="domain"):
         "target": target,
         "handle": data.get("handle", "—"),
         "status": data.get("status", []),
-        "registrar": (data.get("entities") or [{}])[0].get("vcardArray", [[], []])[1][0][3] if data.get("entities") else "—",
+        "registrar": (data.get("entities") or [{}])[0].get("vcardArray", [[], []])[1][0][CONST_3] if data.get("entities") else "—",
         "created": events.get("registration"),
         "updated": events.get("last changed"),
         "expires": events.get("expiration"),
@@ -142,12 +148,12 @@ def mx_check(email):
     mx = []
     has_a = False
     try:
-        ans = dns.resolver.resolve(domain, "MX", lifetime=6)
+        ans = dns.resolver.resolve(domain, "MX", lifetime=CONST_6)
         mx = [f"{r.preference} → {r.exchange}" for r in ans]
     except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN, dns.resolver.NoNameservers, dns.resolver.Timeout):
         mx = []
     try:
-        has_a = bool(dns.resolver.resolve(domain, "A", lifetime=6))
+        has_a = bool(dns.resolver.resolve(domain, "A", lifetime=CONST_6))
     except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN, dns.resolver.NoNameservers, dns.resolver.Timeout):
         has_a = False
     return {
@@ -168,10 +174,10 @@ def cve_search(query):
     try:
         resp = requests.get(
             "https://services.nvd.nist.gov/rest/json/cves/2.0",
-            params={"keywordSearch": query, "resultsPerPage": 20},
-            timeout=20,
+            params={"keywordSearch": query, "resultsPerPage": CONST_20},
+            timeout=CONST_20,
         )
-        if resp.status_code != 200:
+        if resp.status_code != CONST_200:
             return {"error": f"NVD API вернул {resp.status_code}."}
         data = resp.json()
     except requests.RequestException as exc:
@@ -193,7 +199,7 @@ def cve_search(query):
                 "cvss": cvss,
                 "published": str(cve.get("published") or "")[:10],
                 "summary": desc[:240],
-                "refs": [r.get("url") for r in cve.get("references", [])][:3],
+                "refs": [r.get("url") for r in cve.get("references", [])][:CONST_3],
             }
         )
     return {"query": query, "count": data.get("totalResults", 0), "results": results}
